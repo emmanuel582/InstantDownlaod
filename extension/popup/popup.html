@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Instant Download</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <img src="../icons/icon48.png" alt="Instant Download" class="logo-icon">
+                <h1>Instant Download</h1>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="input-section">
+                <label for="videoUrl">Video URL</label>
+                <div class="input-wrapper">
+                    <input type="url" id="videoUrl" placeholder="Enter Instagram video URL (e.g., https://www.instagram.com/reel/...)" autocomplete="off">
+                    <button class="paste-btn" id="pasteBtn" title="Paste from clipboard">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="format-section">
+                <label for="formatSelect">Download Format</label>
+                <select id="formatSelect">
+                    <option value="best">Best Quality (Auto)</option>
+                </select>
+
+                <div class="format-buttons">
+                    <button class="format-btn" data-format="video">Video</button>
+                    <button class="format-btn" data-format="audio">Audio</button>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+
+            <div class="status-message" style="display: none;"></div>
+
+            <button class="download-btn" id="downloadBtn" disabled>
+                <span class="btn-text">Download</span>
+                <div class="loading-spinner"></div>
+            </button>
+        </main>
+
+        <footer class="footer">
+            <div class="server-status">
+                <div class="status-indicator"></div>
+                <span class="status-text">Checking server...</span>
+            </div>
+            <p class="policy-note">This extension respects copyright laws. Please download only content you have permission to use.</p>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
