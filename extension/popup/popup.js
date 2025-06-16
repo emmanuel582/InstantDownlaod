@@ -1,7 +1,7 @@
 class VideoDownloaderPopup {
     constructor() {
         // Server URLs
-        this.serverUrl = 'https://video-downloader-server.onrender.com';
+        this.serverUrl = 'https://instantdownlaod.onrender.com';
         this.localServerUrl = 'http://localhost:3000';
         
         // State
