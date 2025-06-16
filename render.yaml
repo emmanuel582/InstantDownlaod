@@ -3,12 +3,7 @@ services:
     name: video-downloader-server
     env: node
     rootDir: server
-    buildCommand: |
-      curl -fsSL https://bun.sh/install | bash
-      export PATH="/opt/render/project/src/.bun/bin:$PATH"
-      python3 -m pip install --upgrade pip
-      pip3 install -r requirements.txt
-      npm install
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: npm start
     envVars:
       - key: NODE_ENV
