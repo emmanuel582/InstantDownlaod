@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "echo 'No build step required'",
-    "postinstall": "node scripts/verify-python.js && python3 -m pip install --upgrade pip && pip3 install -r requirements.txt",
+    "postinstall": "node scripts/verify-python.js && python -m pip install --upgrade pip && pip install -r requirements.txt",
     "verify-python": "node scripts/verify-python.js"
   },
   "dependencies": {
@@ -15,7 +15,7 @@
   },
   "engines": {
     "node": "18.x",
-    "python": ">=3.8.0"
+    "python": ">=3.11.0"
   },
   "keywords": [
     "video",
