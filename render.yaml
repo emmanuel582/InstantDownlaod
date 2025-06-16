@@ -2,6 +2,7 @@ services:
   - type: web
     name: video-downloader-server
     env: node
+    rootDir: server
     buildCommand: |
       curl -fsSL https://bun.sh/install | bash
       export PATH="/opt/render/project/src/.bun/bin:$PATH"
