@@ -1,20 +1,34 @@
 services:
   - type: web
     name: video-downloader-server
-    env: node
-    rootDir: server
-    buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: npm start
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
       - key: PYTHON_VERSION
-        value: 3.8.0
+        value: 3.11.0
       - key: PATH
-        value: /opt/render/project/src/.bun/bin:/opt/render/project/src/node_modules/.bin:/usr/local/bin:/usr/bin:/bin
+        value: /usr/local/bin:/usr/bin:/bin
+      - key: PORT
+        value: 3000
     healthCheckPath: /status
     autoDeploy: true
     disk:
       name: temp
       mountPath: /opt/render/project/src/temp
-      sizeGB: 1 
+      sizeGB: 2
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+    # Remove CORS headers as they are handled by Express middleware
+    # headers:
+    #   - path: /*
+    #     name: Access-Control-Allow-Origin
+    #     value: "*"
+    #   - path: /*
+    #     name: Access-Control-Allow-Methods
+    #     value: "GET, POST, OPTIONS"
+    #   - path: /*
+    #     name: Access-Control-Allow-Headers
+    #     value: "Content-Type, Authorization" 

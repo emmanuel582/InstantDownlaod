@@ -95,16 +95,16 @@ function callPythonScript(args) {
                         // If not JSON, use the raw error
                         reject(new Error(err || data || `Process exited with code ${code}`));
                     }
-                } else {
+            } else {
                     // Try to parse the success response
-                    try {
+                try {
                         const result = JSON.parse(data);
                         if (result.error) {
                             reject(new Error(result.error));
                         } else {
                             resolve(result);
                         }
-                    } catch (e) {
+                } catch (e) {
                         reject(new Error(`Failed to parse Python output: ${data}`));
                     }
                 }
@@ -124,8 +124,8 @@ function callPythonInfo(url, cookiesPath) {
 
 // Helper to call Python script for download
 function callPythonDownload(url, format_id, outPath, isAudio, cookiesPath) {
-    const args = ['yt_dlp_api.py', 'download', url, format_id, outPath, isAudio.toString()];
-    if (cookiesPath) args.push('--cookies', cookiesPath);
+        const args = ['yt_dlp_api.py', 'download', url, format_id, outPath, isAudio.toString()];
+        if (cookiesPath) args.push('--cookies', cookiesPath);
     return callPythonScript(args);
 }
 
@@ -153,6 +153,9 @@ app.post('/api/info', async (req, res) => {
         }
         
         const info = await callPythonInfo(url, cookiesPath);
+        if (!info) {
+            throw new Error('Failed to get video information');
+        }
         
         // Process formats
         const formats = {
@@ -268,7 +271,9 @@ app.post('/api/download', async (req, res) => {
     } catch (error) {
         console.error('Download error:', error);
         try {
-            fs.unlinkSync(outPath);
+            if (fs.existsSync(outPath)) {
+                fs.unlinkSync(outPath);
+            }
         } catch (e) {
             console.error('Failed to delete output file:', e);
         }
@@ -292,10 +297,10 @@ app.post('/api/download', async (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
-    res.status(500).json({
-        error: 'Internal server error',
-        details: isProduction ? undefined : err.message
-    });
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: isProduction ? undefined : err.message
+        });
 });
 
 // Start server

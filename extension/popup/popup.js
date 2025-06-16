@@ -1,7 +1,7 @@
 class VideoDownloaderPopup {
     constructor() {
         // Server URLs
-        this.serverUrl = 'https://instantdownlaod.onrender.com';
+        this.serverUrl = 'https://instantdownload.onrender.com';
         this.localServerUrl = 'http://localhost:3000';
         
         // State
@@ -14,6 +14,7 @@ class VideoDownloaderPopup {
             audio: []
         };
         this.formatsLoaded = false;
+        this.activeServerUrl = null;
         
         // Initialize after DOM is loaded
         if (document.readyState === 'loading') {
@@ -131,6 +132,7 @@ class VideoDownloaderPopup {
             const response = await fetch(`${this.serverUrl}/status`);
             if (response.ok) {
                 this.updateServerStatus(true, 'render');
+                this.activeServerUrl = this.serverUrl;
                 return;
             }
         } catch (error) {
@@ -142,11 +144,14 @@ class VideoDownloaderPopup {
             const response = await fetch(`${this.localServerUrl}/status`);
             if (response.ok) {
                 this.updateServerStatus(true, 'local');
+                this.activeServerUrl = this.localServerUrl;
             } else {
                 this.updateServerStatus(false);
+                this.activeServerUrl = null;
             }
         } catch (error) {
             this.updateServerStatus(false);
+            this.activeServerUrl = null;
         }
     }
 
@@ -233,12 +238,16 @@ class VideoDownloaderPopup {
     }
 
     async fetchFormats(url) {
+        if (!this.activeServerUrl) {
+            throw new Error('No active server available');
+        }
+
         try {
             this.showStatus('Loading available formats...', 'info');
             this.elements.formatSelect.disabled = true;
             this.elements.formatSelect.innerHTML = '<option value="loading">Loading formats...</option>';
             
-            const response = await fetch('http://localhost:3000/api/info', {
+            const response = await fetch(`${this.activeServerUrl}/api/info`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url })
@@ -287,13 +296,18 @@ class VideoDownloaderPopup {
     async handleDownload() {
         if (this.isDownloading || !this.currentUrl || !this.selectedFormat) return;
 
+        if (!this.activeServerUrl) {
+            this.showStatus('No active server available', 'error');
+            return;
+        }
+
         try {
             this.isDownloading = true;
             this.showStatus('Starting download...', 'info');
             this.updateDownloadUI(true);
 
             const cookies = await this.getYouTubeCookies();
-            const response = await fetch(`${this.serverUrl}/download`, {
+            const response = await fetch(`${this.activeServerUrl}/api/download`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

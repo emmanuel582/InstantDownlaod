@@ -10,13 +10,18 @@
     "tabs",
     "cookies",
     "clipboardRead",
-    "contextMenus"
+    "contextMenus",
+    "nativeMessaging"
   ],
   "host_permissions": [
     "http://localhost:3000/*",
     "https://*.onrender.com/*",
     "https://*/*",
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/*",
+    "*://*.tiktok.com/*",
+    "*://*.facebook.com/*",
+    "*://*.instagram.com/*",
+    "*://*.twitter.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -48,9 +53,11 @@
     {
       "resources": [
         "icons/*",
-        "popup/*"
+        "popup/*",
+        "background/*"
       ],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "minimum_chrome_version": "88"
 }

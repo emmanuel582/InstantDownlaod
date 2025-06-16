@@ -1,15 +1,24 @@
 {
-  "name": "extension",
+  "name": "video-downloader-extension",
   "version": "1.0.0",
-  "main": "background.js",
+  "description": "Chrome extension for downloading videos from various platforms",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node build.js",
+    "clean": "rm -rf dist",
+    "package": "npm run build && cd dist && zip -r ../video-downloader-extension.zip ."
   },
-  "keywords": [],
+  "keywords": [
+    "chrome-extension",
+    "video-downloader",
+    "youtube",
+    "tiktok",
+    "facebook",
+    "instagram",
+    "twitter"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "sharp": "^0.34.2"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
