@@ -4,13 +4,15 @@ import yt_dlp
 import os
 
 
-def get_info(url):
+def get_info(url, cookies_path=None):
     ydl_opts = {
         'quiet': True,
         'skip_download': True,
         'forcejson': True,
         'extract_flat': False,
     }
+    if cookies_path:
+        ydl_opts['cookiefile'] = cookies_path
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         formats = []
@@ -55,13 +57,16 @@ def get_info(url):
         }
 
 
-def download_media(url, format_id, out_path, is_audio=False):
+def download_media(url, format_id, out_path, is_audio=False, cookies_path=None):
     ydl_opts = {
         'format': format_id,
         'outtmpl': out_path,
         'quiet': True,
         'noplaylist': True,
     }
+    
+    if cookies_path:
+        ydl_opts['cookiefile'] = cookies_path
     
     if is_audio:
         ydl_opts.update({
@@ -82,10 +87,16 @@ def main():
         print(json.dumps({'error': 'Not enough arguments'}))
         sys.exit(1)
     command = sys.argv[1]
+    cookies_path = None
+    # Parse for --cookies argument
+    if '--cookies' in sys.argv:
+        idx = sys.argv.index('--cookies')
+        if idx + 1 < len(sys.argv):
+            cookies_path = sys.argv[idx + 1]
     if command == 'info':
         url = sys.argv[2]
         try:
-            info = get_info(url)
+            info = get_info(url, cookies_path)
             print(json.dumps(info))
         except Exception as e:
             print(json.dumps({'error': str(e)}))
@@ -99,7 +110,7 @@ def main():
         out_path = sys.argv[4]
         is_audio = sys.argv[5].lower() == 'true'
         try:
-            download_media(url, format_id, out_path, is_audio)
+            download_media(url, format_id, out_path, is_audio, cookies_path)
             print(json.dumps({'status': 'ok'}))
         except Exception as e:
             print(json.dumps({'error': str(e)}))

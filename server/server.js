@@ -47,9 +47,11 @@ setInterval(() => {
 }, 300000); // Run every 5 minutes
 
 // Helper to call Python script
-function callPythonInfo(url) {
+function callPythonInfo(url, cookiesPath) {
     return new Promise((resolve, reject) => {
-        const py = spawn('python', ['yt_dlp_api.py', 'info', url]);
+        const args = ['yt_dlp_api.py', 'info', url];
+        if (cookiesPath) args.push('--cookies', cookiesPath);
+        const py = spawn('python', args);
         let data = '';
         let err = '';
         py.stdout.on('data', chunk => data += chunk);
@@ -68,9 +70,11 @@ function callPythonInfo(url) {
     });
 }
 
-function callPythonDownload(url, format_id, outPath, isAudio) {
+function callPythonDownload(url, format_id, outPath, isAudio, cookiesPath) {
     return new Promise((resolve, reject) => {
-        const py = spawn('python', ['yt_dlp_api.py', 'download', url, format_id, outPath, isAudio.toString()]);
+        const args = ['yt_dlp_api.py', 'download', url, format_id, outPath, isAudio.toString()];
+        if (cookiesPath) args.push('--cookies', cookiesPath);
+        const py = spawn('python', args);
         let err = '';
         py.stderr.on('data', chunk => err += chunk);
         py.on('close', code => {
@@ -94,11 +98,15 @@ app.get('/status', (req, res) => {
 
 // Get video/audio info and formats
 app.post('/api/info', async (req, res) => {
-    const { url } = req.body;
+    const { url, cookies } = req.body;
     if (!url) return res.status(400).json({ error: 'URL is required' });
-    
+    let cookiesPath = null;
     try {
-        const info = await callPythonInfo(url);
+        if (cookies) {
+            cookiesPath = path.join(tempDir, `cookies_${Date.now()}.txt`);
+            fs.writeFileSync(cookiesPath, cookies);
+        }
+        const info = await callPythonInfo(url, cookiesPath);
         
         // Process formats
         const formats = {
@@ -142,25 +150,32 @@ app.post('/api/info', async (req, res) => {
         });
     } catch (error) {
         console.error('Info fetch error:', error);
-                    res.status(500).json({ 
+        res.status(500).json({ 
             error: 'Failed to fetch formats', 
             details: isProduction ? undefined : error.toString() 
         });
+    } finally {
+        if (cookiesPath) fs.unlink(cookiesPath, () => {});
     }
 });
 
 // Download media (video or audio)
 app.post('/api/download', async (req, res) => {
-    const { url, format, quality, extractAudio } = req.body;
+    const { url, format, quality, extractAudio, cookies } = req.body;
     if (!url || !format) return res.status(400).json({ error: 'URL and format are required' });
     
     const outPath = path.join(tempDir, `temp_${Date.now()}.${format === 'audio' ? 'mp3' : 'mp4'}`);
+    let cookiesPath = null;
     
     try {
+        if (cookies) {
+            cookiesPath = path.join(tempDir, `cookies_${Date.now()}.txt`);
+            fs.writeFileSync(cookiesPath, cookies);
+        }
         const isAudio = format === 'audio' || extractAudio;
         const format_id = quality || (isAudio ? 'bestaudio' : 'best');
         
-        await callPythonDownload(url, format_id, outPath, isAudio);
+        await callPythonDownload(url, format_id, outPath, isAudio, cookiesPath);
         
         // Set appropriate headers
         res.setHeader('Content-Disposition', `attachment; filename="download.${isAudio ? 'mp3' : 'mp4'}"`);
@@ -177,7 +192,7 @@ app.post('/api/download', async (req, res) => {
         stream.on('error', err => {
             console.error('Stream error:', err);
             fs.unlink(outPath, () => {});
-                    if (!res.headersSent) {
+            if (!res.headersSent) {
                 res.status(500).json({ 
                     error: 'Failed to stream file', 
                     details: isProduction ? undefined : err.toString() 
@@ -193,6 +208,8 @@ app.post('/api/download', async (req, res) => {
                 details: isProduction ? undefined : error.toString() 
             });
         }
+    } finally {
+        if (cookiesPath) fs.unlink(cookiesPath, () => {});
     }
 });
 
