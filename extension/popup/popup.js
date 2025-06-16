@@ -15,6 +15,7 @@ class VideoDownloaderPopup {
         };
         this.formatsLoaded = false;
         this.activeServerUrl = null;
+        this.serverCheckInterval = null;
         
         // Initialize after DOM is loaded
         if (document.readyState === 'loading') {
@@ -42,11 +43,17 @@ class VideoDownloaderPopup {
 
         // Initialize components
         this.checkServerStatus();
+        this.startServerCheck();
         this.bindEvents();
         this.setupFormatOptions();
         
         // Get current tab URL
         this.getCurrentTabUrl();
+    }
+
+    startServerCheck() {
+        // Check server status every 30 seconds
+        this.serverCheckInterval = setInterval(() => this.checkServerStatus(), 30000);
     }
 
     async getCurrentTabUrl() {
@@ -127,42 +134,70 @@ class VideoDownloaderPopup {
     }
 
     async checkServerStatus() {
+        let renderServerOk = false;
+        let localServerOk = false;
+
         try {
             // Try Render server first
-            const response = await fetch(`${this.serverUrl}/status`);
+            const response = await fetch(`${this.serverUrl}/status`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
             if (response.ok) {
-                this.updateServerStatus(true, 'render');
-                this.activeServerUrl = this.serverUrl;
-                return;
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    renderServerOk = true;
+                    this.updateServerStatus(true, 'render');
+                    this.activeServerUrl = this.serverUrl;
+                    return;
+                }
             }
         } catch (error) {
-            console.log('Render server not available, trying local server...');
+            console.log('Render server not available:', error);
         }
 
         try {
             // Fallback to local server
-            const response = await fetch(`${this.localServerUrl}/status`);
+            const response = await fetch(`${this.localServerUrl}/status`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
             if (response.ok) {
-                this.updateServerStatus(true, 'local');
-                this.activeServerUrl = this.localServerUrl;
-            } else {
-                this.updateServerStatus(false);
-                this.activeServerUrl = null;
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    localServerOk = true;
+                    this.updateServerStatus(true, 'local');
+                    this.activeServerUrl = this.localServerUrl;
+                    return;
+                }
             }
         } catch (error) {
+            console.log('Local server not available:', error);
+        }
+
+        // If neither server is available
+        if (!renderServerOk && !localServerOk) {
             this.updateServerStatus(false);
             this.activeServerUrl = null;
+            this.showStatus('Server unavailable. Please try again later.', 'error');
         }
     }
 
-    updateServerStatus(isOnline, type = '') {
+    updateServerStatus(isAvailable, serverType = null) {
         if (this.elements.serverStatus) {
-            this.elements.serverStatus.className = `status-indicator ${isOnline ? 'online' : ''}`;
+            this.elements.serverStatus.className = 'status-indicator ' + 
+                (isAvailable ? 'status-ok' : 'status-error');
         }
         if (this.elements.serverStatusText) {
-            this.elements.serverStatusText.textContent = isOnline 
-                ? `${type === 'render' ? 'Cloud' : 'Local'} Server Online`
-                : 'Server Offline';
+            this.elements.serverStatusText.textContent = isAvailable 
+                ? `Server: ${serverType === 'render' ? 'Cloud' : 'Local'}`
+                : 'Server: Unavailable';
         }
     }
 

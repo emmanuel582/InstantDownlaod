@@ -16,18 +16,31 @@ if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
 }
 
+// Add request body parsing middleware with error handling
+app.use(express.json({ 
+    limit: '50mb',
+    verify: (req, res, buf, encoding) => {
+        if (buf && buf.length) {
+            try {
+                JSON.parse(buf);
+            } catch (e) {
+                res.status(400).json({ error: 'Invalid JSON in request body' });
+                throw new Error('Invalid JSON');
+            }
+        }
+    }
+}));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 // Enable CORS for the extension
 app.use(cors({
     origin: isProduction 
         ? ['chrome-extension://*', 'https://instantdownload.onrender.com']
         : ['chrome-extension://*', 'http://localhost:*'],
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type']
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true
 }));
-
-// Increase payload limit for large files
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Cleanup temp files periodically
 setInterval(() => {
@@ -130,12 +143,37 @@ function callPythonDownload(url, format_id, outPath, isAudio, cookiesPath) {
 }
 
 // Health check endpoint
+app.get('/', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        version: 'yt-dlp-backend',
+        environment: isProduction ? 'production' : 'development',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Alias for status endpoint
 app.get('/status', (req, res) => {
     res.json({ 
         status: 'ok', 
         version: 'yt-dlp-backend',
-        environment: isProduction ? 'production' : 'development'
+        environment: isProduction ? 'production' : 'development',
+        timestamp: new Date().toISOString()
     });
+});
+
+// Add OPTIONS handler for CORS preflight
+app.options('*', cors());
+
+// Error handling middleware for JSON parsing
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ 
+            error: 'Invalid JSON in request body',
+            details: isProduction ? undefined : err.message
+        });
+    }
+    next(err);
 });
 
 // Get video/audio info and formats
